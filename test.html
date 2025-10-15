@@ -154,13 +154,13 @@
         .property-details-form {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(0,0,0,0.1);
+            border-top: 1px solid #e0e0e0;
         }
         
         .property-details-form h3 {
             font-size: 16px;
             margin-bottom: 15px;
-            color: inherit;
+            color: #444;
         }
         
         .property-row {
@@ -183,10 +183,16 @@
         
         .property-input input, .property-input select {
             padding: 8px 12px;
-            border: 1px solid rgba(0,0,0,0.2);
+            border: 2px solid #e0e0e0;
             border-radius: 4px;
             font-size: 14px;
-            background: rgba(255,255,255,0.9);
+            background: white;
+            transition: border-color 0.3s;
+        }
+        
+        .property-input input:focus, .property-input select:focus {
+            outline: none;
+            border-color: #b69856;
         }
         
         .checkbox-input {
@@ -203,45 +209,6 @@
         .checkbox-input label {
             margin: 0;
             font-size: 13px;
-        }
-        
-        .property-summary {
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 6px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .property-summary.show {
-            display: block;
-        }
-        
-        .property-summary.qualified {
-            background: #d4edda;
-            border: 2px solid #28a745;
-            color: #155724;
-        }
-        
-        .property-summary.disqualified {
-            background: #f8d7da;
-            border: 2px solid #dc3545;
-            color: #721c24;
-        }
-        
-        .requirement-item {
-            margin: 5px 0;
-            font-size: 13px;
-        }
-        
-        .requirement-item.pass {
-            color: #155724;
-        }
-        
-        .requirement-item.fail {
-            color: #721c24;
-            font-weight: 600;
         }
         
         .loading {
@@ -270,7 +237,7 @@
 <body>
     <div class="container">
         <h1>Ohio Buy Box Verifier</h1>
-        <p class="subtitle">Check if an address is within accepted service areas</p>
+        <p class="subtitle">Check if a property matches the buy box criteria</p>
         
         <form id="addressForm">
             <div class="input-group">
@@ -278,12 +245,66 @@
                 <textarea id="address" placeholder="818 Broadway&#10;Lorain, OH 44052" required rows="3"></textarea>
             </div>
             
-            <button type="submit">Verify Address</button>
+            <div class="property-details-form">
+                <h3>Property Details</h3>
+                <div class="property-row">
+                    <div class="property-input">
+                        <label>Home Type</label>
+                        <select id="homeType" required>
+                            <option value="">Select...</option>
+                            <option value="sfh">Single-Family Home</option>
+                            <option value="mfh">Multi-Family Home</option>
+                            <option value="condo">Condo</option>
+                            <option value="townhouse">Townhouse</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="property-input">
+                        <label>Year Built</label>
+                        <input type="number" id="yearBuilt" min="1800" max="2025" placeholder="1950" required>
+                    </div>
+                    <div class="property-input">
+                        <label>Square Feet</label>
+                        <input type="number" id="sqft" min="0" placeholder="1500" required>
+                    </div>
+                </div>
+                <div class="property-row">
+                    <div class="property-input">
+                        <label>Bedrooms</label>
+                        <input type="number" id="bedrooms" min="0" placeholder="3" required>
+                    </div>
+                    <div class="property-input">
+                        <label>Bathrooms</label>
+                        <input type="number" id="bathrooms" min="0" step="0.5" placeholder="2" required>
+                    </div>
+                </div>
+                <div class="property-row">
+                    <div class="property-input">
+                        <label>Negotiated Price</label>
+                        <input type="number" id="negotiatedPrice" min="0" placeholder="200000" required>
+                    </div>
+                    <div class="property-input">
+                        <label>Rehab Level</label>
+                        <select id="rehabLevel" required>
+                            <option value="">Select...</option>
+                            <option value="light">Light</option>
+                            <option value="medium">Medium</option>
+                            <option value="heavy">Heavy</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="checkbox-input">
+                    <input type="checkbox" id="leaseback">
+                    <label for="leaseback">Seller is doing a lease-back</label>
+                </div>
+            </div>
+            
+            <button type="submit">Check Buy Box Match</button>
         </form>
         
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Verifying address...</p>
+            <p>Verifying property...</p>
         </div>
         
         <div class="result" id="result"></div>
@@ -331,9 +352,16 @@
             e.preventDefault();
             
             const fullAddress = document.getElementById('address').value.trim();
+            const homeType = document.getElementById('homeType').value;
+            const yearBuilt = document.getElementById('yearBuilt').value;
+            const beds = document.getElementById('bedrooms').value;
+            const baths = document.getElementById('bathrooms').value;
+            const sqft = document.getElementById('sqft').value;
+            const negotiatedPrice = document.getElementById('negotiatedPrice').value;
+            const rehabLevel = document.getElementById('rehabLevel').value;
             
-            if (!fullAddress) {
-                showResult('warning', 'Missing Address', 'Please enter an address.');
+            if (!fullAddress || !homeType || !yearBuilt || !beds || !baths || !sqft || !negotiatedPrice || !rehabLevel) {
+                showResult('warning', 'Missing Information', 'Please fill in all required fields.');
                 return;
             }
             
@@ -371,16 +399,53 @@
                 // Extract 5-digit zip code
                 const zip5 = zipCode.split('-')[0];
                 
-                if (acceptedZipCodes.has(zip5)) {
-                    showResult('success', '✓ Address Accepted', 
-                        `This address is in zip code ${zip5}, which is within our service area.<br><br>
-                        <strong>Full Address:</strong><br>${location.display_name}`, 
-                        fullAddress, location.display_name);
+                // Check if zip code is accepted
+                const zipAccepted = acceptedZipCodes.has(zip5);
+                
+                // Check buy box requirements
+                let qualifies = zipAccepted;
+                
+                if (qualifies) {
+                    // Home Type check
+                    if (homeType !== 'sfh' && homeType !== 'mfh') {
+                        qualifies = false;
+                    }
+                    
+                    // Year Built check
+                    if (parseInt(yearBuilt) < 1900) {
+                        qualifies = false;
+                    }
+                    
+                    // Square Footage check
+                    if (parseInt(sqft) < 850) {
+                        qualifies = false;
+                    }
+                    
+                    // Bed/Bath check
+                    const minBeds = 3;
+                    const minBaths = 1;
+                    const bedsPass = parseInt(beds) >= minBeds;
+                    const bathsPass = parseFloat(baths) >= minBaths;
+                    
+                    if (!bedsPass || !bathsPass) {
+                        qualifies = false;
+                    }
+                    
+                    // Negotiated Price check
+                    if (parseInt(negotiatedPrice) > 250000) {
+                        qualifies = false;
+                    }
+                    
+                    // Rehab Level check
+                    if (rehabLevel === 'heavy') {
+                        qualifies = false;
+                    }
+                }
+                
+                if (qualifies) {
+                    showResult('success', '✓ Property Matches Buy Box', '');
                 } else {
-                    showResult('error', '✗ Address Not Accepted', 
-                        `This address is in zip code ${zip5}, which is outside our service area.<br><br>
-                        <strong>Full Address:</strong><br>${location.display_name}`, 
-                        fullAddress, location.display_name);
+                    showResult('error', '✗ Property Does Not Match Buy Box', '');
                 }
                 
             } catch (error) {
@@ -392,141 +457,13 @@
             }
         });
 
-        function showResult(type, title, message, address, fullAddress) {
+        function showResult(type, title, message) {
             result.className = `result ${type}`;
-            
-            let propertyFormHtml = '';
-            
-            if (address && type === 'success') {
-                
-                propertyFormHtml = `
-                    <div class="property-details-form">
-                        <h3>Property Details</h3>
-                        <div class="property-row">
-                            <div class="property-input">
-                                <label>Home Type</label>
-                                <select id="homeType">
-                                    <option value="">Select...</option>
-                                    <option value="sfh">Single-Family Home</option>
-                                    <option value="mfh">Multi-Family Home</option>
-                                    <option value="condo">Condo</option>
-                                    <option value="townhouse">Townhouse</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="property-input">
-                                <label>Year Built</label>
-                                <input type="number" id="yearBuilt" min="1800" max="2025" placeholder="1950">
-                            </div>
-                            <div class="property-input">
-                                <label>Square Feet</label>
-                                <input type="number" id="sqft" min="0" placeholder="1500">
-                            </div>
-                        </div>
-                        <div class="property-row">
-                            <div class="property-input">
-                                <label>Bedrooms</label>
-                                <input type="number" id="bedrooms" min="0" placeholder="3">
-                            </div>
-                            <div class="property-input">
-                                <label>Bathrooms</label>
-                                <input type="number" id="bathrooms" min="0" step="0.5" placeholder="2">
-                            </div>
-                        </div>
-                        <div class="checkbox-input">
-                            <input type="checkbox" id="leaseback">
-                            <label for="leaseback">Seller is doing a lease-back</label>
-                        </div>
-                        <div class="property-summary" id="propertySummary"></div>
-                    </div>
-                `;
-            }
-            
             result.innerHTML = `
                 <div class="result-title">${title}</div>
-                <div class="result-details">${message}</div>
-                ${propertyFormHtml}
+                ${message ? `<div class="result-details">${message}</div>` : ''}
             `;
             result.style.display = 'block';
-            
-            // Add event listeners for property details inputs
-            if (type === 'success') {
-                const homeTypeInput = document.getElementById('homeType');
-                const yearBuiltInput = document.getElementById('yearBuilt');
-                const bedsInput = document.getElementById('bedrooms');
-                const bathsInput = document.getElementById('bathrooms');
-                const sqftInput = document.getElementById('sqft');
-                const leasebackInput = document.getElementById('leaseback');
-                const summary = document.getElementById('propertySummary');
-                
-                function updateSummary() {
-                    const homeType = homeTypeInput.value;
-                    const yearBuilt = yearBuiltInput.value;
-                    const beds = bedsInput.value;
-                    const baths = bathsInput.value;
-                    const sqft = sqftInput.value;
-                    const leaseback = leasebackInput.checked;
-                    
-                    if (homeType && yearBuilt && beds && baths && sqft) {
-                        // Check buy box requirements (internal logic only)
-                        let qualifies = true;
-                        
-                        // Home Type check
-                        if (homeType !== 'sfh' && homeType !== 'mfh') {
-                            qualifies = false;
-                        }
-                        
-                        // Year Built check
-                        if (parseInt(yearBuilt) < 1900) {
-                            qualifies = false;
-                        }
-                        
-                        // Square Footage check
-                        if (parseInt(sqft) < 850) {
-                            qualifies = false;
-                        }
-                        
-                        // Bed/Bath check
-                        const minBeds = leaseback ? 2 : 3;
-                        const minBaths = 1;
-                        const bedsPass = parseInt(beds) >= minBeds;
-                        const bathsPass = parseFloat(baths) >= minBaths;
-                        
-                        if (!bedsPass || !bathsPass) {
-                            qualifies = false;
-                        }
-                        
-                        // Build summary HTML - only show match/no match
-                        let summaryHtml = `<strong>${qualifies ? '✓ This property matches the buy box criteria' : '✗ This property does not match the buy box criteria'}</strong><br><br>`;
-                        
-                        const homeTypeName = homeType === 'sfh' ? 'Single-Family Home' : 
-                                           homeType === 'mfh' ? 'Multi-Family Home' :
-                                           homeType === 'condo' ? 'Condo' :
-                                           homeType === 'townhouse' ? 'Townhouse' : 'Other';
-                        
-                        summaryHtml += `<div style="margin-top: 10px; font-size: 13px;">`;
-                        summaryHtml += `<strong>Property Details:</strong><br>`;
-                        summaryHtml += `${homeTypeName} • Built ${yearBuilt} • ${parseInt(sqft).toLocaleString()} sqft<br>`;
-                        summaryHtml += `${beds} bed / ${baths} bath`;
-                        if (leaseback) {
-                            summaryHtml += ` • Lease-back arrangement`;
-                        }
-                        summaryHtml += `</div>`;
-                        
-                        summary.innerHTML = summaryHtml;
-                        summary.className = 'property-summary show ' + (qualifies ? 'qualified' : 'disqualified');
-                    } else {
-                        summary.classList.remove('show');
-                    }
-                }
-                
-                homeTypeInput.addEventListener('change', updateSummary);
-                yearBuiltInput.addEventListener('input', updateSummary);
-                bedsInput.addEventListener('input', updateSummary);
-                bathsInput.addEventListener('input', updateSummary);
-                sqftInput.addEventListener('input', updateSummary);
-                leasebackInput.addEventListener('change', updateSummary);
-            }
         }
     </script>
 </body>
