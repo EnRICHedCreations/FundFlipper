@@ -632,6 +632,10 @@
             }
 
             return {
+                ...row, // Include all original columns
+                _matchStatus: status,
+                _matches: matches,
+                // For display purposes
                 address: address || 'N/A',
                 city: city || '',
                 state: state || '',
@@ -698,7 +702,28 @@
         });
 
         function exportToCSV(data, filename) {
-            const csv = Papa.unparse(data);
+            // Create export data with all original columns plus match status
+            const exportData = data.map(row => {
+                const exportRow = { ...row };
+                // Add match status column
+                exportRow['Match Status'] = row._matchStatus;
+                // Remove internal properties used for display
+                delete exportRow._matchStatus;
+                delete exportRow._matches;
+                delete exportRow.address;
+                delete exportRow.city;
+                delete exportRow.state;
+                delete exportRow.zipCode;
+                delete exportRow.homeType;
+                delete exportRow.sqft;
+                delete exportRow.beds;
+                delete exportRow.baths;
+                delete exportRow.status;
+                delete exportRow.matches;
+                return exportRow;
+            });
+            
+            const csv = Papa.unparse(exportData);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
