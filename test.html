@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ohio Buy Box Address Verifier</title>
+    <title>Address Zip Code Verifier</title>
     <style>
         * {
             margin: 0;
@@ -293,7 +293,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Ohio Buy Box Address Verifier</h1>
+        <h1>Address Zip Code Verifier</h1>
         <p class="subtitle">Check if an address is within accepted service areas</p>
         
         <form id="addressForm">
@@ -423,16 +423,16 @@
             let propertyFormHtml = '';
             
             if (address && type === 'success') {
-                const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(fullAddress)}`;
-                const realtorUrl = `https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(fullAddress)}`;
-                const redfinUrl = `https://www.redfin.com/zipcode/${encodeURIComponent(fullAddress)}`;
+                // Clean up the address for Zillow search
+                // Remove country from the address if present
+                let cleanAddress = fullAddress.replace(/, United States$/, '').replace(/, USA$/, '');
+                
+                const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(cleanAddress)}_rb/`;
                 
                 propertyLinksHtml = `
                     <div class="property-links">
                         <strong>Look up property details:</strong><br><br>
                         <a href="${zillowUrl}" target="_blank">View on Zillow</a>
-                        <a href="${realtorUrl}" target="_blank">View on Realtor.com</a>
-                        <a href="${redfinUrl}" target="_blank">View on Redfin</a>
                     </div>
                 `;
                 
