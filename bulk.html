@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ohio Buy Box Bulk Verifier</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #151515;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 30px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #b69856;
+        }
+        
+        .upload-section.dragover {
+            border-color: #b69856;
+            background: #fafafa;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-label {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #6e5732 0%, #b69856 100%);
+            color: white;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .upload-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(182, 152, 86, 0.4);
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .column-mapping {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .column-mapping h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mapping-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mapping-item label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .mapping-item select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+        
+        .mapping-item select:focus {
+            outline: none;
+            border-color: #b69856;
+        }
+        
+        button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #6e5732 0%, #b69856 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(182, 152, 86, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+            color: #b69856;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #b69856;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-card.matches {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .summary-card.no-match {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .summary-card.total {
+            background: #e7f3ff;
+            border: 2px solid #0066cc;
+        }
+        
+        .summary-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .results-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+        }
+        
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 12px;
+        }
+        
+        .status-badge.match {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.no-match {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-badge.error {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .export-buttons {
+            margin-top: 20px;
+        }
+        
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ohio Buy Box Bulk Verifier</h1>
+        <p class="subtitle">Upload a CSV or Excel file to check multiple properties at once</p>
+        
+        <div class="instructions">
+            <h3>File Format Requirements:</h3>
+            <ul>
+                <li>Column for <strong>Zip Code</strong> or <strong>Zip</strong> (required)</li>
+                <li>Column for <strong>Home Type</strong> (Single-Family Home, Multi-Family Home, Condo, Townhouse, Other)</li>
+                <li>Column for <strong>Square Feet</strong> or <strong>Sqft</strong></li>
+                <li>Column for <strong>Bedrooms</strong> or <strong>Beds</strong></li>
+                <li>Column for <strong>Bathrooms</strong> or <strong>Baths</strong></li>
+                <li>Optional: Columns for <strong>Address</strong>, <strong>City</strong>, <strong>State</strong></li>
+            </ul>
+        </div>
+        
+        <div class="column-mapping" id="columnMapping" style="display: none;">
+            <h3>Map Your Columns</h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Match your file's column names to the required fields:</p>
+            <div class="mapping-grid" id="mappingGrid"></div>
+            <button id="confirmMapping" style="margin-top: 15px;">Confirm Mapping</button>
+        
+        <div class="upload-section" id="uploadSection">
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+            <label for="fileInput" class="upload-label">Choose File</label>
+            <div class="file-info" id="fileInfo">or drag and drop here</div>
+        </div>
+        
+        <button id="processBtn" disabled>Process File</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing properties...</p>
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="summary" id="summary"></div>
+            
+            <div class="export-buttons">
+                <button id="exportMatches">Export Matches (CSV)</button>
+                <button id="exportNoMatches">Export Non-Matches (CSV)</button>
+                <button id="exportAll">Export All Results (CSV)</button>
+            </div>
+            
+            <div class="table-container">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>City</th>
+                            <th>State</th>
+                            <th>Zip Code</th>
+                            <th>Home Type</th>
+                            <th>Sqft</th>
+                            <th>Beds</th>
+                            <th>Baths</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const acceptedZipCodes = new Set([
+            '43001', '43004', '43008', '43015', '43016', '43017', '43018', '43023', '43025', '43026',
+            '43031', '43035', '43040', '43054', '43055', '43062', '43068', '43071', '43074', '43080',
+            '43081', '43082', '43085', '43107', '43110', '43113', '43119', '43123', '43125', '43130',
+            '43140', '43147', '43201', '43202', '43203', '43204', '43205', '43206', '43207', '43209',
+            '43211', '43212', '43213', '43214', '43215', '43219', '43220', '43221', '43222', '43223',
+            '43224', '43227', '43228', '43229', '43230', '43231', '43232', '43235', '44001', '44011',
+            '44012', '44017', '44022', '44023', '44024', '44026', '44035', '44039', '44040', '44044',
+            '44045', '44050', '44052', '44053', '44054', '44055', '44056', '44060', '44065', '44067',
+            '44070', '44072', '44074', '44077', '44081', '44087', '44090', '44092', '44094', '44095',
+            '44102', '44103', '44104', '44105', '44106', '44107', '44108', '44109', '44110', '44111',
+            '44112', '44113', '44114', '44115', '44116', '44117', '44118', '44119', '44120', '44121',
+            '44122', '44123', '44124', '44125', '44126', '44127', '44128', '44129', '44130', '44131',
+            '44132', '44133', '44134', '44135', '44136', '44137', '44138', '44139', '44140', '44141',
+            '44142', '44143', '44144', '44145', '44146', '44147', '44149', '44202', '44203', '44212',
+            '44216', '44221', '44223', '44224', '44236', '44240', '44241', '44250', '44256', '44262',
+            '44272', '44278', '44281', '44301', '44302', '44303', '44304', '44305', '44306', '44307',
+            '44310', '44311', '44312', '44313', '44314', '44319', '44320', '44321', '44333', '45001',
+            '45002', '45005', '45011', '45013', '45014', '45015', '45030', '45034', '45036', '45039',
+            '45040', '45042', '45044', '45050', '45054', '45065', '45066', '45067', '45068', '45069',
+            '45102', '45103', '45106', '45111', '45120', '45122', '45140', '45150', '45152', '45153',
+            '45157', '45160', '45162', '45174', '45176', '45202', '45203', '45204', '45205', '45206',
+            '45207', '45208', '45209', '45211', '45212', '45213', '45214', '45215', '45216', '45217',
+            '45218', '45219', '45220', '45223', '45224', '45225', '45226', '45227', '45229', '45230',
+            '45231', '45232', '45233', '45236', '45237', '45238', '45239', '45240', '45241', '45242',
+            '45243', '45244', '45245', '45246', '45247', '45248', '45249', '45251', '45252', '45255',
+            '45305', '45315', '45322', '45324', '45342', '45345', '45377', '45383', '45402', '45403',
+            '45404', '45405', '45406', '45409', '45410', '45414', '45415', '45416', '45417', '45419',
+            '45420', '45424', '45426', '45429', '45430', '45431', '45432', '45434', '45439', '45440',
+            '45449', '45458', '45459'
+        ]);
+
+        let fileData = null;
+        let processedResults = [];
+        let fileColumns = [];
+        let columnMapping = {};
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInfo = document.getElementById('fileInfo');
+        const processBtn = document.getElementById('processBtn');
+        const loading = document.getElementById('loading');
+        const progress = document.getElementById('progress');
+        const results = document.getElementById('results');
+        const resultsBody = document.getElementById('resultsBody');
+        const summary = document.getElementById('summary');
+        const columnMappingSection = document.getElementById('columnMapping');
+        const mappingGrid = document.getElementById('mappingGrid');
+        const confirmMappingBtn = document.getElementById('confirmMapping');
+
+        // Drag and drop handlers
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const fileName = file.name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+
+            if (fileExt === 'csv') {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        fileData = results.data;
+                        fileColumns = Object.keys(fileData[0] || {});
+                        fileInfo.textContent = `${fileName} (${fileData.length} rows)`;
+                        showColumnMapping();
+                    },
+                    error: (error) => {
+                        alert('Error parsing CSV: ' + error.message);
+                    }
+                });
+            } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    fileData = XLSX.utils.sheet_to_json(firstSheet);
+                    fileColumns = Object.keys(fileData[0] || {});
+                    fileInfo.textContent = `${fileName} (${fileData.length} rows)`;
+                    showColumnMapping();
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('Please upload a CSV or Excel file');
+            }
+        }
+
+        function showColumnMapping() {
+            columnMappingSection.style.display = 'block';
+            results.style.display = 'none';
+            
+            const requiredFields = [
+                { key: 'zipCode', label: 'Zip Code', autoMatch: ['Zip Code', 'Zip', 'zip_code', 'zip', 'ZipCode', 'Postal Code', 'PostalCode'] },
+                { key: 'homeType', label: 'Home Type', autoMatch: ['Home Type', 'home_type', 'HomeType', 'Type', 'Property Type', 'PropertyType'] },
+                { key: 'sqft', label: 'Square Feet', autoMatch: ['Square Feet', 'Sqft', 'sqft', 'square_feet', 'SquareFeet', 'Sq Ft', 'SqFt'] },
+                { key: 'beds', label: 'Bedrooms', autoMatch: ['Bedrooms', 'Beds', 'bedrooms', 'beds', 'Bed'] },
+                { key: 'baths', label: 'Bathrooms', autoMatch: ['Bathrooms', 'Baths', 'bathrooms', 'baths', 'Bath'] }
+            ];
+            
+            const optionalFields = [
+                { key: 'address', label: 'Address (Optional)', autoMatch: ['Address', 'address', 'Street Address', 'street_address', 'StreetAddress'] },
+                { key: 'city', label: 'City (Optional)', autoMatch: ['City', 'city'] },
+                { key: 'state', label: 'State (Optional)', autoMatch: ['State', 'state', 'ST'] }
+            ];
+            
+            mappingGrid.innerHTML = '';
+            
+            [...requiredFields, ...optionalFields].forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'mapping-item';
+                
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                
+                const select = document.createElement('select');
+                select.id = `map_${field.key}`;
+                
+                // Add empty option
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = '-- Select Column --';
+                select.appendChild(emptyOption);
+                
+                // Add file columns
+                fileColumns.forEach(col => {
+                    const option = document.createElement('option');
+                    option.value = col;
+                    option.textContent = col;
+                    select.appendChild(option);
+                });
+                
+                // Auto-match if possible
+                const match = field.autoMatch.find(name => fileColumns.includes(name));
+                if (match) {
+                    select.value = match;
+                }
+                
+                div.appendChild(label);
+                div.appendChild(select);
+                mappingGrid.appendChild(div);
+            });
+        }
+
+        confirmMappingBtn.addEventListener('click', () => {
+            columnMapping = {
+                zipCode: document.getElementById('map_zipCode').value,
+                homeType: document.getElementById('map_homeType').value,
+                sqft: document.getElementById('map_sqft').value,
+                beds: document.getElementById('map_beds').value,
+                baths: document.getElementById('map_baths').value,
+                address: document.getElementById('map_address').value,
+                city: document.getElementById('map_city').value,
+                state: document.getElementById('map_state').value
+            };
+            
+            // Check required fields
+            if (!columnMapping.zipCode || !columnMapping.homeType || !columnMapping.sqft || !columnMapping.beds || !columnMapping.baths) {
+                alert('Please map all required fields (Zip Code, Home Type, Square Feet, Bedrooms, Bathrooms)');
+                return;
+            }
+            
+            columnMappingSection.style.display = 'none';
+            processBtn.disabled = false;
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!fileData || fileData.length === 0) return;
+
+            processBtn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            processedResults = [];
+
+            for (let i = 0; i < fileData.length; i++) {
+                const row = fileData[i];
+                progress.textContent = `Processing ${i + 1} of ${fileData.length}...`;
+
+                const result = processRow(row);
+                processedResults.push(result);
+            }
+
+            displayResults();
+            loading.style.display = 'none';
+            results.style.display = 'block';
+            processBtn.disabled = false;
+        });
+
+        function normalizeHomeType(homeType) {
+            if (!homeType) return null;
+            const ht = homeType.toLowerCase().trim();
+            if (ht.includes('single') || ht.includes('sfh') || ht === 'sfr') return 'sfh';
+            if (ht.includes('multi') || ht.includes('mfh') || ht.includes('mfr')) return 'mfh';
+            if (ht.includes('condo')) return 'condo';
+            if (ht.includes('town')) return 'townhouse';
+            return 'other';
+        }
+
+        function processRow(row) {
+            const address = columnMapping.address ? row[columnMapping.address] : null;
+            const city = columnMapping.city ? row[columnMapping.city] : null;
+            const state = columnMapping.state ? row[columnMapping.state] : null;
+            let zipCode = row[columnMapping.zipCode];
+            
+            const homeType = normalizeHomeType(row[columnMapping.homeType]);
+            const sqft = parseInt(row[columnMapping.sqft]);
+            const beds = parseInt(row[columnMapping.beds]);
+            const baths = parseFloat(row[columnMapping.baths]);
+
+            // Extract 5-digit zip
+            if (zipCode) {
+                zipCode = String(zipCode).split('-')[0].trim();
+            }
+
+            // Check buy box
+            let status = 'Error';
+            let matches = false;
+
+            if (!zipCode || !homeType || isNaN(sqft) || isNaN(beds) || isNaN(baths)) {
+                status = 'Missing Data';
+            } else {
+                const zipAccepted = acceptedZipCodes.has(zipCode);
+                const homeTypeValid = homeType === 'sfh' || homeType === 'mfh';
+                const sqftValid = sqft >= 850;
+                const bedsValid = beds >= 3;
+                const bathsValid = baths >= 1;
+
+                matches = zipAccepted && homeTypeValid && sqftValid && bedsValid && bathsValid;
+                status = matches ? 'Match' : 'No Match';
+            }
+
+            return {
+                address: address || 'N/A',
+                city: city || '',
+                state: state || '',
+                zipCode: zipCode || 'N/A',
+                homeType: homeType || 'N/A',
+                sqft: sqft || 'N/A',
+                beds: beds || 'N/A',
+                baths: baths || 'N/A',
+                status,
+                matches
+            };
+        }
+
+        function displayResults() {
+            const matchCount = processedResults.filter(r => r.matches).length;
+            const noMatchCount = processedResults.filter(r => !r.matches && r.status !== 'Missing Data' && r.status !== 'Error').length;
+            const totalCount = processedResults.length;
+
+            summary.innerHTML = `
+                <div class="summary-card total">
+                    <div class="summary-number">${totalCount}</div>
+                    <div class="summary-label">Total Properties</div>
+                </div>
+                <div class="summary-card matches">
+                    <div class="summary-number">${matchCount}</div>
+                    <div class="summary-label">Matches Buy Box</div>
+                </div>
+                <div class="summary-card no-match">
+                    <div class="summary-number">${noMatchCount}</div>
+                    <div class="summary-label">Does Not Match</div>
+                </div>
+            `;
+
+            resultsBody.innerHTML = '';
+            processedResults.forEach(result => {
+                const row = document.createElement('tr');
+                const statusClass = result.matches ? 'match' : (result.status === 'Missing Data' || result.status === 'Error' ? 'error' : 'no-match');
+                
+                row.innerHTML = `
+                    <td>${result.address}</td>
+                    <td>${result.city}</td>
+                    <td>${result.state}</td>
+                    <td>${result.zipCode}</td>
+                    <td>${result.homeType}</td>
+                    <td>${result.sqft}</td>
+                    <td>${result.beds}</td>
+                    <td>${result.baths}</td>
+                    <td><span class="status-badge ${statusClass}">${result.status}</span></td>
+                `;
+                resultsBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('exportMatches').addEventListener('click', () => {
+            exportToCSV(processedResults.filter(r => r.matches), 'buy_box_matches.csv');
+        });
+
+        document.getElementById('exportNoMatches').addEventListener('click', () => {
+            exportToCSV(processedResults.filter(r => !r.matches), 'buy_box_no_matches.csv');
+        });
+
+        document.getElementById('exportAll').addEventListener('click', () => {
+            exportToCSV(processedResults, 'buy_box_all_results.csv');
+        });
+
+        function exportToCSV(data, filename) {
+            const csv = Papa.unparse(data);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
