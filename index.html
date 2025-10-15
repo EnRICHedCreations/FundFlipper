@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ohio Buy Box Address Verifier</title>
+    <title>Address Zip Code Verifier</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #151515;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -67,13 +67,13 @@
         
         input:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #b69856;
         }
         
         button {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6e5732 0%, #b69856 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -85,7 +85,7 @@
         
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(182, 152, 86, 0.4);
         }
         
         button:active {
@@ -155,12 +155,12 @@
             display: none;
             text-align: center;
             margin-top: 20px;
-            color: #667eea;
+            color: #b69856;
         }
         
         .spinner {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #b69856;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -177,12 +177,12 @@
 <body>
     <div class="container">
         <h1>Address Zip Code Verifier</h1>
-        <p class="subtitle">Check if an address is within accepted service areas - Enter your lead address below</p>
+        <p class="subtitle">Check if an address is within accepted service areas</p>
         
         <form id="addressForm">
             <div class="input-group">
                 <label for="address">Address</label>
-                <textarea id="address" placeholder="818 Broadway Lorain, OH 44052" required rows="1"></textarea>
+                <textarea id="address" placeholder="818 Broadway, Lorain, OH 44052" required rows="1"></textarea>
             </div>
             
             <button type="submit">Verify Address</button>
