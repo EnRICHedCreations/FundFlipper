@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Address Zip Code Verifier</title>
+    <title>Ohio Buy Box Address Verifier</title>
     <style>
         * {
             margin: 0;
@@ -293,7 +293,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Address Zip Code Verifier</h1>
+        <h1>Ohio Buy Box Address Verifier</h1>
         <p class="subtitle">Check if an address is within accepted service areas</p>
         
         <form id="addressForm">
@@ -423,9 +423,9 @@
             let propertyFormHtml = '';
             
             if (address && type === 'success') {
-                const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(address)}`;
-                const realtorUrl = `https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(address)}`;
-                const redfinUrl = `https://www.redfin.com/zipcode/${encodeURIComponent(address)}`;
+                const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(fullAddress)}`;
+                const realtorUrl = `https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(fullAddress)}`;
+                const redfinUrl = `https://www.redfin.com/zipcode/${encodeURIComponent(fullAddress)}`;
                 
                 propertyLinksHtml = `
                     <div class="property-links">
@@ -438,33 +438,35 @@
                 
                 propertyFormHtml = `
                     <div class="property-details-form">
-                        <h3>Property Details (Optional)</h3>
+                        <h3>Property Details</h3>
                         <div class="property-row">
                             <div class="property-input">
-                                <label>Home Type *</label>
+                                <label>Home Type</label>
                                 <select id="homeType">
                                     <option value="">Select...</option>
                                     <option value="sfh">Single-Family Home</option>
                                     <option value="mfh">Multi-Family Home</option>
+                                    <option value="condo">Condo</option>
+                                    <option value="townhouse">Townhouse</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
                             <div class="property-input">
-                                <label>Year Built *</label>
+                                <label>Year Built</label>
                                 <input type="number" id="yearBuilt" min="1800" max="2025" placeholder="1950">
                             </div>
                             <div class="property-input">
-                                <label>Square Feet *</label>
+                                <label>Square Feet</label>
                                 <input type="number" id="sqft" min="0" placeholder="1500">
                             </div>
                         </div>
                         <div class="property-row">
                             <div class="property-input">
-                                <label>Bedrooms *</label>
+                                <label>Bedrooms</label>
                                 <input type="number" id="bedrooms" min="0" placeholder="3">
                             </div>
                             <div class="property-input">
-                                <label>Bathrooms *</label>
+                                <label>Bathrooms</label>
                                 <input type="number" id="bathrooms" min="0" step="0.5" placeholder="2">
                             </div>
                         </div>
@@ -504,34 +506,22 @@
                     const leaseback = leasebackInput.checked;
                     
                     if (homeType && yearBuilt && beds && baths && sqft) {
-                        // Check buy box requirements
-                        const requirements = [];
-                        let allPass = true;
+                        // Check buy box requirements (internal logic only)
+                        let qualifies = true;
                         
                         // Home Type check
-                        if (homeType === 'sfh') {
-                            requirements.push({ text: '✓ Home Type: Single-Family Home (Preferred)', pass: true });
-                        } else if (homeType === 'mfh') {
-                            requirements.push({ text: '✓ Home Type: Multi-Family Home (May be considered)', pass: true });
-                        } else {
-                            requirements.push({ text: '✗ Home Type: Must be Single-Family or Multi-Family', pass: false });
-                            allPass = false;
+                        if (homeType !== 'sfh' && homeType !== 'mfh') {
+                            qualifies = false;
                         }
                         
                         // Year Built check
-                        if (parseInt(yearBuilt) >= 1900) {
-                            requirements.push({ text: `✓ Year Built: ${yearBuilt} (Minimum 1900)`, pass: true });
-                        } else {
-                            requirements.push({ text: `✗ Year Built: ${yearBuilt} (Must be 1900 or later)`, pass: false });
-                            allPass = false;
+                        if (parseInt(yearBuilt) < 1900) {
+                            qualifies = false;
                         }
                         
                         // Square Footage check
-                        if (parseInt(sqft) >= 850) {
-                            requirements.push({ text: `✓ Square Footage: ${parseInt(sqft).toLocaleString()} sqft (Minimum 850)`, pass: true });
-                        } else {
-                            requirements.push({ text: `✗ Square Footage: ${parseInt(sqft).toLocaleString()} sqft (Minimum 850 required)`, pass: false });
-                            allPass = false;
+                        if (parseInt(sqft) < 850) {
+                            qualifies = false;
                         }
                         
                         // Bed/Bath check
@@ -540,25 +530,29 @@
                         const bedsPass = parseInt(beds) >= minBeds;
                         const bathsPass = parseFloat(baths) >= minBaths;
                         
-                        if (bedsPass && bathsPass) {
-                            const note = leaseback ? ' (Lease-back: 2/1 acceptable)' : ' (Standard: 3/1 minimum)';
-                            requirements.push({ text: `✓ Bed/Bath: ${beds} bed / ${baths} bath${note}`, pass: true });
-                        } else {
-                            const required = leaseback ? '2 bed / 1 bath' : '3 bed / 1 bath';
-                            requirements.push({ text: `✗ Bed/Bath: ${beds} bed / ${baths} bath (Minimum ${required} required)`, pass: false });
-                            allPass = false;
+                        if (!bedsPass || !bathsPass) {
+                            qualifies = false;
                         }
                         
-                        // Build summary HTML
-                        let summaryHtml = `<strong>${allPass ? '✓ Property Qualifies for Buy Box!' : '✗ Property Does Not Meet Buy Box Requirements'}</strong><br><br>`;
-                        summaryHtml += '<div style="margin-top: 10px;">';
-                        requirements.forEach(req => {
-                            summaryHtml += `<div class="requirement-item ${req.pass ? 'pass' : 'fail'}">${req.text}</div>`;
-                        });
-                        summaryHtml += '</div>';
+                        // Build summary HTML - only show match/no match
+                        let summaryHtml = `<strong>${qualifies ? '✓ This property matches the buy box criteria' : '✗ This property does not match the buy box criteria'}</strong><br><br>`;
+                        
+                        const homeTypeName = homeType === 'sfh' ? 'Single-Family Home' : 
+                                           homeType === 'mfh' ? 'Multi-Family Home' :
+                                           homeType === 'condo' ? 'Condo' :
+                                           homeType === 'townhouse' ? 'Townhouse' : 'Other';
+                        
+                        summaryHtml += `<div style="margin-top: 10px; font-size: 13px;">`;
+                        summaryHtml += `<strong>Property Details:</strong><br>`;
+                        summaryHtml += `${homeTypeName} • Built ${yearBuilt} • ${parseInt(sqft).toLocaleString()} sqft<br>`;
+                        summaryHtml += `${beds} bed / ${baths} bath`;
+                        if (leaseback) {
+                            summaryHtml += ` • Lease-back arrangement`;
+                        }
+                        summaryHtml += `</div>`;
                         
                         summary.innerHTML = summaryHtml;
-                        summary.className = 'property-summary show ' + (allPass ? 'qualified' : 'disqualified');
+                        summary.className = 'property-summary show ' + (qualifies ? 'qualified' : 'disqualified');
                     } else {
                         summary.classList.remove('show');
                     }
