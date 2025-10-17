@@ -810,11 +810,7 @@
          */
         async function checkMemberStatus(email) {
             // 1. Request Configuration
-            // OPTION 1: Direct API (requires CORS to be enabled on server)
-            // const url = 'https://lowballoffer.ai/api/check-member';
-
-            // OPTION 2: Use local CORS proxy (run proxy-server.js first)
-            const url = 'http://localhost:3000/api/check-member';
+            const url = 'https://lowballoffer.ai/api/check-member';
 
             const requestOptions = {
                 method: 'POST',
