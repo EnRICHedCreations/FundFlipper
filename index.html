@@ -805,19 +805,88 @@
         }
 
         /**
-         * Handle download form submission
-         * TODO: Replace with backend API call
+         * Sends a POST request to the lowballoffer.ai API to check a user's membership status.
+         * It expects a JSON response and checks the 'isMember' property.
          */
-        function handleDownload(event) {
+        async function checkMemberStatus(email) {
+            // 1. Request Configuration
+            const url = 'https://lowballoffer.ai/api/check-member';
+
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // The body is a JavaScript object converted to a JSON string
+                body: JSON.stringify({
+                    email: email
+                })
+            };
+
+            try {
+                // 2. Perform the API Request
+                const response = await fetch(url, requestOptions);
+
+                // Check for non-OK HTTP status (e.g., 404, 500)
+                if (!response.ok) {
+                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                    // Attempt to get text, even on error, for better debugging
+                    const errorText = await response.text();
+                    console.error("Error Response Body:", errorText);
+                    return { success: false, error: response.statusText, status: response.status };
+                }
+
+                // 3. Parse the JSON Response
+                const responseData = await response.json();
+
+                console.log("API Response Data:", responseData);
+
+                // 4. --- MANDATORY CHECK: isMember = true ---
+                if (responseData.isMember === true) {
+                    console.log("✅ SUCCESS: Member status confirmed.");
+
+                    // --- OPTIONAL CHECK: skool_annual_member = 1 (Commented Out) ---
+                    /*
+                    const isAnnualMember = responseData.member &&
+                                        responseData.member.skool_annual_member === 1;
+
+                    if (isAnnualMember) {
+                        console.log("🎉 The user is an annual member.");
+                    } else {
+                        console.log("Note: The user is a member, but not currently marked as an annual member (or the data is 0).");
+                    }
+                    */
+
+                    return { success: true, isMember: true, data: responseData };
+
+                } else {
+                    console.log("❌ FAILURE: User is NOT a member (isMember is false).");
+                    return { success: true, isMember: false, data: responseData };
+                }
+
+            } catch (error) {
+                // 5. Handle Network/Parsing Errors
+                console.error('An error occurred during the request:', error.message);
+                return { success: false, error: error.message };
+            }
+        }
+
+
+
+        /**
+         * Handle download form submission with member authentication
+         */
+        async function handleDownload(event) {
             event.preventDefault();
 
             const emailInput = document.getElementById('downloadEmail');
             const errorMsg = document.getElementById('emailError');
             const email = emailInput.value.trim();
 
-            // Validate email
+            // Validate email format
             if (!isValidEmail(email)) {
                 emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
                 errorMsg.classList.add('show');
                 emailInput.focus();
                 return;
@@ -827,21 +896,43 @@
             emailInput.classList.remove('error');
             errorMsg.classList.remove('show');
 
-            // TODO: Send email to backend API for tracking and authentication
-            // Example API call (to be implemented):
-            // fetch('/api/track-download', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({
-            //         email: email,
-            //         document: 'Ohio_Hedge_Fund_Buy_Box',
-            //         timestamp: new Date().toISOString()
-            //     })
-            // });
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
 
-            // Store email in localStorage (temporary solution)
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
+            // Store email in localStorage
             localStorage.setItem('fundflipper_user_email', email);
-            console.log('Email captured for download tracking:', email);
 
             // Trigger PDF download
             initiateDownload();
@@ -931,19 +1022,19 @@
         }
 
         /**
-         * Handle lead form submission
-         * TODO: Replace with link to actual lead submission portal
+         * Handle lead form submission with member authentication
          */
-        function handleLeadSubmission(event) {
+        async function handleLeadSubmission(event) {
             event.preventDefault();
 
             const emailInput = document.getElementById('leadEmail');
             const errorMsg = document.getElementById('leadEmailError');
             const email = emailInput.value.trim();
 
-            // Validate email
+            // Validate email format
             if (!isValidEmail(email)) {
                 emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
                 errorMsg.classList.add('show');
                 emailInput.focus();
                 return;
@@ -953,15 +1044,49 @@
             emailInput.classList.remove('error');
             errorMsg.classList.remove('show');
 
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
+
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
             // Store email
             localStorage.setItem('fundflipper_user_email', email);
-            console.log('Lead submission - Email captured:', email);
 
             // TODO: Future - Redirect to lead submission portal
             // window.open('LEAD_SUBMISSION_URL', '_blank');
 
             // Show coming soon message
-            alert('Lead submission portal coming soon. Your email has been saved.');
+            alert('Lead submission portal coming soon. Your membership has been verified.');
 
             // Hide modal
             hideLeadModal();
@@ -1011,19 +1136,20 @@
         }
 
         /**
-         * Handle deal form submission
-         * Opens MaxDispo.com in new tab
+         * Handle deal form submission with member authentication
+         * Opens MaxDispo.com in new tab after verification
          */
-        function handleDealSubmission(event) {
+        async function handleDealSubmission(event) {
             event.preventDefault();
 
             const emailInput = document.getElementById('dealEmail');
             const errorMsg = document.getElementById('dealEmailError');
             const email = emailInput.value.trim();
 
-            // Validate email
+            // Validate email format
             if (!isValidEmail(email)) {
                 emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
                 errorMsg.classList.add('show');
                 emailInput.focus();
                 return;
@@ -1033,9 +1159,43 @@
             emailInput.classList.remove('error');
             errorMsg.classList.remove('show');
 
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
+
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
             // Store email
             localStorage.setItem('fundflipper_user_email', email);
-            console.log('Deal submission - Email captured:', email);
 
             // Open MaxDispo.com in new tab
             // TODO: Future - Pass authentication token or email as URL parameter
