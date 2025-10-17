@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FundFlipper - Hedge Fund Buy Box Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gold-dark: #6e5732;
+            --gold-light: #b69856;
+            --black: #151515;
+            --dark-gray: #1f1f1f;
+            --light-gray: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--black);
+            color: white;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: var(--dark-gray);
+            border-bottom: 2px solid var(--gold-light);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            color: #999;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(180deg, var(--dark-gray) 0%, var(--black) 100%);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #ccc;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Fund Card */
+        .fund-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .fund-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(182, 152, 86, 0.3);
+        }
+
+        .fund-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #f5f5f5;
+        }
+
+        .fund-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            flex-shrink: 0;
+            box-shadow: 0 8px 24px rgba(182, 152, 86, 0.4);
+        }
+
+        .fund-info {
+            flex: 1;
+        }
+
+        .fund-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .fund-description {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .fund-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .meta-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--gold-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Action Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .action-card {
+            background: #f8f8f8;
+            border-radius: 12px;
+            padding: 30px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .action-card:hover {
+            border-color: var(--gold-light);
+            background: white;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(182, 152, 86, 0.2);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .action-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .action-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .action-arrow {
+            display: inline-block;
+            margin-top: 12px;
+            color: var(--gold-light);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* Coming Soon Section */
+        .coming-soon {
+            background: var(--dark-gray);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            border: 2px dashed var(--gold-light);
+        }
+
+        .coming-soon h2 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .coming-soon p {
+            font-size: 16px;
+            color: #999;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-gray);
+            border-top: 2px solid var(--gold-light);
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-text {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .fund-card {
+                padding: 30px 20px;
+            }
+
+            .fund-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .fund-title {
+                font-size: 24px;
+            }
+
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fund-card {
+            animation: fadeIn 0.6s ease;
+        }
+
+        .coming-soon {
+            animation: fadeIn 0.6s ease 0.2s both;
+        }
+
+        /* Download Modal Styles */
+        /* TODO: Future integration with proper authentication backend */
+        .download-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .download-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(182, 152, 86, 0.4);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .modal-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .modal-body {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--gold-light);
+            box-shadow: 0 0 0 4px rgba(182, 152, 86, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #ef4444;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(182, 152, 86, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(182, 152, 86, 0.4);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .privacy-notice {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div>
+                <div class="logo">FundFlipper</div>
+                <div class="tagline">Institutional Real Estate Buy Box Platform</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Welcome to FundFlipper</h1>
+        <p>Streamline your institutional real estate acquisitions with our advanced buy box verification platform. Access multiple hedge fund criteria, verify properties instantly, and submit deals with confidence.</p>
+    </section>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Ohio Hedge Fund Buy Box -->
+        <div class="fund-card">
+            <div class="fund-header">
+                <div class="fund-icon">🏛️</div>
+                <div class="fund-info">
+                    <h2 class="fund-title">Ohio Hedge Fund Buy Box</h2>
+                    <p class="fund-description">
+                        Our flagship institutional buyer focused on residential properties across Ohio's major metropolitan areas.
+                    </p>
+                </div>
+            </div>
+
+            <div class="action-grid">
+                <!-- Single Verifier -->
+                <a href="single.html" class="action-card">
+                    <div class="action-icon">🔍</div>
+                    <div class="action-title">Single Property Verifier</div>
+                    <div class="action-description">
+                        Quickly verify if a single property matches the buy box criteria. Enter address and property details for instant validation.
+                    </div>
+                    <div class="action-arrow">Launch Verifier →</div>
+                </a>
+
+                <!-- Batch Verifier -->
+                <a href="bulk.html" class="action-card">
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">Batch Verifier</div>
+                    <div class="action-description">
+                        Upload and verify multiple properties at once. Perfect for processing large lists and portfolio analysis.
+                    </div>
+                    <div class="action-arrow">Launch Batch Tool →</div>
+                </a>
+
+                <!-- Submit Lead - REQUIRES EMAIL AUTHENTICATION -->
+                <!-- TODO: CONNECT TO AUTHORIZATION SYSTEM -->
+                <a href="#underwriting" class="action-card" onclick="event.preventDefault(); showLeadModal();">
+                    <div class="action-icon">📝</div>
+                    <div class="action-title">Submit Lead to Underwriting</div>
+                    <div class="action-description">
+                        Submit a qualified property lead for detailed underwriting review and acquisition consideration.
+                    </div>
+                    <div class="action-arrow">Submit Lead →</div>
+                </a>
+
+                <!-- Submit Deal - REQUIRES EMAIL AUTHENTICATION -->
+                <!-- TODO: CONNECT TO AUTHORIZATION SYSTEM -->
+                <a href="#disposition" class="action-card" onclick="event.preventDefault(); showDealModal();">
+                    <div class="action-icon">🤝</div>
+                    <div class="action-title">Submit Deal to Disposition</div>
+                    <div class="action-description">
+                        Submit a contract-ready deal to the disposition team for immediate review and closing.
+                    </div>
+                    <div class="action-arrow">Submit Deal →</div>
+                </a>
+
+                <!-- Download Buy Box - REQUIRES EMAIL AUTHENTICATION -->
+                <!-- TODO: CONNECT TO AUTHORIZATION SYSTEM -->
+                <!-- This button is currently protected by a simple email gate. -->
+                <!-- Future implementation should integrate with proper authentication backend. -->
+                <a href="#download" class="action-card" onclick="event.preventDefault(); showDownloadModal();">
+                    <div class="action-icon">📥</div>
+                    <div class="action-title">Download Buy Box PDF</div>
+                    <div class="action-description">
+                        Download the complete buy box criteria document with detailed requirements and guidelines.
+                    </div>
+                    <div class="action-arrow">Download PDF →</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Coming Soon Section -->
+        <div class="coming-soon">
+            <h2>More Hedge Funds Coming Soon</h2>
+            <p>
+                We're continuously expanding our network of institutional buyers.
+                Additional buy boxes will be added soon.
+                Stay tuned for more investment opportunities.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">FundFlipper</div>
+            <p class="footer-text">
+                © 2025 FundFlipper. All rights reserved. | Institutional Real Estate Platform
+            </p>
+        </div>
+    </footer>
+
+    <!-- Download Email Gate Modal -->
+    <!-- TODO: Future integration with proper authentication backend -->
+    <!-- This modal currently uses localStorage for email storage -->
+    <!-- Replace with backend API call for proper user authentication and tracking -->
+    <div id="downloadModal" class="download-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideDownloadModal()">&times;</button>
+
+            <div class="modal-header">
+                <div class="modal-icon">📥</div>
+                <h3 class="modal-title">Download Buy Box</h3>
+                <p class="modal-description">
+                    Enter your email address to download the Ohio Hedge Fund Buy Box criteria document.
+                </p>
+            </div>
+
+            <div class="modal-body">
+                <form id="downloadForm" onsubmit="handleDownload(event)">
+                    <div class="form-group">
+                        <label for="downloadEmail" class="form-label">Email Address *</label>
+                        <input
+                            type="email"
+                            id="downloadEmail"
+                            class="form-input"
+                            placeholder="your.email@example.com"
+                            required
+                        >
+                        <div id="emailError" class="error-message">Please enter a valid email address.</div>
+                    </div>
+
+                    <button type="submit" class="download-btn">
+                        Download PDF
+                    </button>
+
+                    <p class="privacy-notice">
+                        <!-- TODO: Update privacy notice for production use -->
+                        Your email will be stored for access tracking and future updates about institutional buy box opportunities.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Lead to Underwriting Modal -->
+    <!-- TODO: CONNECT TO AUTHORIZATION SYSTEM -->
+    <!-- This modal currently uses localStorage for email storage -->
+    <!-- Replace with backend API call for proper user authentication -->
+    <!-- Future: Connect to lead submission portal/form -->
+    <div id="leadModal" class="download-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideLeadModal()">&times;</button>
+
+            <div class="modal-header">
+                <div class="modal-icon">📝</div>
+                <h3 class="modal-title">Submit Lead to Underwriting</h3>
+                <p class="modal-description">
+                    Enter your email address to access the lead submission portal.
+                </p>
+            </div>
+
+            <div class="modal-body">
+                <form id="leadForm" onsubmit="handleLeadSubmission(event)">
+                    <div class="form-group">
+                        <label for="leadEmail" class="form-label">Email Address *</label>
+                        <input
+                            type="email"
+                            id="leadEmail"
+                            class="form-input"
+                            placeholder="your.email@example.com"
+                            required
+                        >
+                        <div id="leadEmailError" class="error-message">Please enter a valid email address.</div>
+                    </div>
+
+                    <button type="submit" class="download-btn">
+                        Submit Lead
+                    </button>
+
+                    <p class="privacy-notice">
+                        <!-- TODO: Update privacy notice for production use -->
+                        Your email will be stored for access tracking.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Deal to Disposition Modal -->
+    <!-- TODO: CONNECT TO AUTHORIZATION SYSTEM -->
+    <!-- This modal currently uses localStorage for email storage -->
+    <!-- Replace with backend API call for proper user authentication -->
+    <!-- Opens MaxDispo.com for deal submission -->
+    <div id="dealModal" class="download-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideDealModal()">&times;</button>
+
+            <div class="modal-header">
+                <div class="modal-icon">🤝</div>
+                <h3 class="modal-title">Submit Deal to Disposition</h3>
+                <p class="modal-description">
+                    Enter your email address to access the deal submission portal.
+                </p>
+            </div>
+
+            <div class="modal-body">
+                <form id="dealForm" onsubmit="handleDealSubmission(event)">
+                    <div class="form-group">
+                        <label for="dealEmail" class="form-label">Email Address *</label>
+                        <input
+                            type="email"
+                            id="dealEmail"
+                            class="form-input"
+                            placeholder="your.email@example.com"
+                            required
+                        >
+                        <div id="dealEmailError" class="error-message">Please enter a valid email address.</div>
+                    </div>
+
+                    <button type="submit" class="download-btn">
+                        Submit Deal
+                    </button>
+
+                    <p class="privacy-notice">
+                        <!-- TODO: Update privacy notice for production use -->
+                        You will be redirected to MaxDispo.com to submit your deal.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add hover effect animations
+        document.querySelectorAll('.action-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.setProperty('--hover-scale', '1.02');
+            });
+        });
+
+        // ===== DOWNLOAD MODAL FUNCTIONS =====
+        // TODO: Future integration with proper authentication backend
+        // Current implementation uses localStorage for email storage
+        // Replace with backend API that:
+        //   1. Authenticates user email
+        //   2. Tracks download activity
+        //   3. Manages user permissions and access control
+        //   4. Sends confirmation emails
+        //   5. Integrates with CRM/marketing automation
+
+        /**
+         * Show the download modal
+         */
+        function showDownloadModal() {
+            const modal = document.getElementById('downloadModal');
+            const emailInput = document.getElementById('downloadEmail');
+            const errorMsg = document.getElementById('emailError');
+
+            // Check if user has previously downloaded (email stored in localStorage)
+            const storedEmail = localStorage.getItem('fundflipper_user_email');
+            if (storedEmail) {
+                emailInput.value = storedEmail;
+            }
+
+            // Reset error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            // Show modal
+            modal.classList.add('active');
+
+            // Focus email input after animation
+            setTimeout(() => emailInput.focus(), 100);
+        }
+
+        /**
+         * Hide the download modal
+         */
+        function hideDownloadModal() {
+            const modal = document.getElementById('downloadModal');
+            modal.classList.remove('active');
+
+            // Reset form
+            document.getElementById('downloadForm').reset();
+        }
+
+        /**
+         * Validate email format
+         */
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        /**
+         * Sends a POST request to the lowballoffer.ai API to check a user's membership status.
+         * It expects a JSON response and checks the 'isMember' property.
+         */
+        async function checkMemberStatus(email) {
+            // 1. Request Configuration
+            // OPTION 1: Direct API (requires CORS to be enabled on server)
+            // const url = 'https://lowballoffer.ai/api/check-member';
+
+            // OPTION 2: Use local CORS proxy (run proxy-server.js first)
+            const url = 'http://localhost:3000/api/check-member';
+
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // The body is a JavaScript object converted to a JSON string
+                body: JSON.stringify({
+                    email: email
+                })
+            };
+
+            try {
+                // 2. Perform the API Request
+                const response = await fetch(url, requestOptions);
+
+                // Check for non-OK HTTP status (e.g., 404, 500)
+                if (!response.ok) {
+                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                    // Attempt to get text, even on error, for better debugging
+                    const errorText = await response.text();
+                    console.error("Error Response Body:", errorText);
+                    return { success: false, error: response.statusText, status: response.status };
+                }
+
+                // 3. Parse the JSON Response
+                const responseData = await response.json();
+
+                console.log("API Response Data:", responseData);
+
+                // 4. --- MANDATORY CHECK: isMember = true ---
+                if (responseData.isMember === true) {
+                    console.log("✅ SUCCESS: Member status confirmed.");
+
+                    // --- OPTIONAL CHECK: skool_annual_member = 1 (Commented Out) ---
+                    /*
+                    const isAnnualMember = responseData.member &&
+                                        responseData.member.skool_annual_member === 1;
+
+                    if (isAnnualMember) {
+                        console.log("🎉 The user is an annual member.");
+                    } else {
+                        console.log("Note: The user is a member, but not currently marked as an annual member (or the data is 0).");
+                    }
+                    */
+
+                    return { success: true, isMember: true, data: responseData };
+
+                } else {
+                    console.log("❌ FAILURE: User is NOT a member (isMember is false).");
+                    return { success: true, isMember: false, data: responseData };
+                }
+
+            } catch (error) {
+                // 5. Handle Network/Parsing Errors
+                console.error('An error occurred during the request:', error.message);
+                return { success: false, error: error.message };
+            }
+        }
+
+
+
+        /**
+         * Handle download form submission with member authentication
+         */
+        async function handleDownload(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('downloadEmail');
+            const errorMsg = document.getElementById('emailError');
+            const email = emailInput.value.trim();
+
+            // Validate email format
+            if (!isValidEmail(email)) {
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
+                errorMsg.classList.add('show');
+                emailInput.focus();
+                return;
+            }
+
+            // Clear error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
+
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
+            // Store email in localStorage
+            localStorage.setItem('fundflipper_user_email', email);
+
+            // Trigger PDF download
+            initiateDownload();
+
+            // Hide modal after short delay
+            setTimeout(() => {
+                hideDownloadModal();
+            }, 500);
+        }
+
+        /**
+         * Initiate PDF download
+         * TODO: In production, this should be a signed/temporary URL from backend
+         */
+        function initiateDownload() {
+            // Create temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = 'downloads/Ohio_Hedge_Fund_Buy_Box.pdf';
+            link.download = 'Ohio_Hedge_Fund_Buy_Box.pdf';
+            link.style.display = 'none';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log('Download initiated: Ohio_Hedge_Fund_Buy_Box.pdf');
+        }
+
+        // Close modal when clicking outside of modal content
+        document.getElementById('downloadModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideDownloadModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const downloadModal = document.getElementById('downloadModal');
+                const leadModal = document.getElementById('leadModal');
+                const dealModal = document.getElementById('dealModal');
+
+                if (downloadModal.classList.contains('active')) {
+                    hideDownloadModal();
+                } else if (leadModal.classList.contains('active')) {
+                    hideLeadModal();
+                } else if (dealModal.classList.contains('active')) {
+                    hideDealModal();
+                }
+            }
+        });
+
+        // ===== SUBMIT LEAD MODAL FUNCTIONS =====
+        // TODO: CONNECT TO AUTHORIZATION SYSTEM
+        // Current implementation shows "Coming Soon" message
+        // Future: Connect to lead submission portal/form
+
+        /**
+         * Show the lead submission modal
+         */
+        function showLeadModal() {
+            const modal = document.getElementById('leadModal');
+            const emailInput = document.getElementById('leadEmail');
+            const errorMsg = document.getElementById('leadEmailError');
+
+            // Pre-fill email if stored
+            const storedEmail = localStorage.getItem('fundflipper_user_email');
+            if (storedEmail) {
+                emailInput.value = storedEmail;
+            }
+
+            // Reset error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            modal.classList.add('active');
+            setTimeout(() => emailInput.focus(), 100);
+        }
+
+        /**
+         * Hide the lead submission modal
+         */
+        function hideLeadModal() {
+            const modal = document.getElementById('leadModal');
+            modal.classList.remove('active');
+            document.getElementById('leadForm').reset();
+        }
+
+        /**
+         * Handle lead form submission with member authentication
+         */
+        async function handleLeadSubmission(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('leadEmail');
+            const errorMsg = document.getElementById('leadEmailError');
+            const email = emailInput.value.trim();
+
+            // Validate email format
+            if (!isValidEmail(email)) {
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
+                errorMsg.classList.add('show');
+                emailInput.focus();
+                return;
+            }
+
+            // Clear error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
+
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
+            // Store email
+            localStorage.setItem('fundflipper_user_email', email);
+
+            // TODO: Future - Redirect to lead submission portal
+            // window.open('LEAD_SUBMISSION_URL', '_blank');
+
+            // Show coming soon message
+            alert('Lead submission portal coming soon. Your membership has been verified.');
+
+            // Hide modal
+            hideLeadModal();
+        }
+
+        // Close lead modal when clicking outside
+        document.getElementById('leadModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLeadModal();
+            }
+        });
+
+        // ===== SUBMIT DEAL MODAL FUNCTIONS =====
+        // TODO: CONNECT TO AUTHORIZATION SYSTEM
+        // Current implementation opens MaxDispo.com
+        // Future: Pass authentication token/email to MaxDispo
+
+        /**
+         * Show the deal submission modal
+         */
+        function showDealModal() {
+            const modal = document.getElementById('dealModal');
+            const emailInput = document.getElementById('dealEmail');
+            const errorMsg = document.getElementById('dealEmailError');
+
+            // Pre-fill email if stored
+            const storedEmail = localStorage.getItem('fundflipper_user_email');
+            if (storedEmail) {
+                emailInput.value = storedEmail;
+            }
+
+            // Reset error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            modal.classList.add('active');
+            setTimeout(() => emailInput.focus(), 100);
+        }
+
+        /**
+         * Hide the deal submission modal
+         */
+        function hideDealModal() {
+            const modal = document.getElementById('dealModal');
+            modal.classList.remove('active');
+            document.getElementById('dealForm').reset();
+        }
+
+        /**
+         * Handle deal form submission with member authentication
+         * Opens MaxDispo.com in new tab after verification
+         */
+        async function handleDealSubmission(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('dealEmail');
+            const errorMsg = document.getElementById('dealEmailError');
+            const email = emailInput.value.trim();
+
+            // Validate email format
+            if (!isValidEmail(email)) {
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Please enter a valid email address.';
+                errorMsg.classList.add('show');
+                emailInput.focus();
+                return;
+            }
+
+            // Clear error state
+            emailInput.classList.remove('error');
+            errorMsg.classList.remove('show');
+
+            // Disable button and show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying Membership...';
+
+            // Check member status via API
+            const authResult = await checkMemberStatus(email);
+
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+
+            // Handle authentication result
+            if (!authResult.success) {
+                // Network or server error
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Unable to verify membership. Please try again later.';
+                errorMsg.classList.add('show');
+                console.error('Authentication error:', authResult.error);
+                return;
+            }
+
+            if (!authResult.isMember) {
+                // User is not a member
+                emailInput.classList.add('error');
+                errorMsg.textContent = 'Access denied. This feature requires an active membership.';
+                errorMsg.classList.add('show');
+                console.log('Access denied for:', email);
+                return;
+            }
+
+            // Member verified - grant access
+            console.log('✅ Member verified:', email);
+
+            // Store email
+            localStorage.setItem('fundflipper_user_email', email);
+
+            // Open MaxDispo.com in new tab
+            // TODO: Future - Pass authentication token or email as URL parameter
+            // Example: window.open('https://MaxDispo.com?email=' + encodeURIComponent(email), '_blank');
+            window.open('https://form.maxdispo.com/?state=OH&dealType=cash&vaa=', '_blank');
+
+            // Hide modal
+            setTimeout(() => {
+                hideDealModal();
+            }, 300);
+        }
+
+        // Close deal modal when clicking outside
+        document.getElementById('dealModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideDealModal();
+            }
+        });
+    </script>
+</body>
+</html>
