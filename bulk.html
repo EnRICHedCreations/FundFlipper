@@ -237,6 +237,11 @@
             border: 2px solid #0066cc;
         }
         
+        .summary-card.leaseback {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+        }
+        
         .summary-number {
             font-size: 36px;
             font-weight: bold;
@@ -297,6 +302,11 @@
             color: #856404;
         }
         
+        .status-badge.leaseback {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
         .export-buttons {
             margin-top: 20px;
         }
@@ -307,10 +317,34 @@
             border: 1px solid #dee2e6;
             border-radius: 8px;
         }
+
+        .back-home-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .back-home-btn:hover {
+            background: #e8e8e8;
+            transform: translateX(-2px);
+        }
+
+        .back-home-btn::before {
+            content: '← ';
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="index.html" class="back-home-btn">Back to Home</a>
         <h1>Ohio Buy Box Bulk Verifier</h1>
         <p class="subtitle">Upload a CSV or Excel file to check multiple properties at once</p>
         
@@ -352,6 +386,7 @@
             
             <div class="export-buttons">
                 <button id="exportMatches">Export Matches (CSV)</button>
+                <button id="exportLeaseback">Export Needs Leaseback (CSV)</button>
                 <button id="exportNoMatches">Export Non-Matches (CSV)</button>
                 <button id="exportAll">Export All Results (CSV)</button>
             </div>
@@ -617,6 +652,7 @@
             // Check buy box
             let status = 'Error';
             let matches = false;
+            let needsLeaseback = false;
 
             if (!zipCode || !homeType || isNaN(sqft) || isNaN(beds) || isNaN(baths)) {
                 status = 'Missing Data';
@@ -624,18 +660,29 @@
                 const zipAccepted = acceptedZipCodes.has(zipCode);
                 const homeTypeValid = homeType === 'sfh' || homeType === 'mfh';
                 const sqftValid = sqft >= 850;
-                const bedsValid = beds >= 3;
+                const bedsValid = beds >= 2;
                 const bathsValid = baths >= 1;
 
-                matches = zipAccepted && homeTypeValid && sqftValid && bedsValid && bathsValid;
-                status = matches ? 'Match' : 'No Match';
+                if (zipAccepted && homeTypeValid && sqftValid && bedsValid && bathsValid) {
+                    if (beds === 2) {
+                        status = 'Needs Leaseback';
+                        needsLeaseback = true;
+                        matches = true;
+                    } else {
+                        status = 'Match';
+                        matches = true;
+                    }
+                } else {
+                    status = 'No Match';
+                    matches = false;
+                }
             }
 
             return {
-                ...row, // Include all original columns
+                ...row,
                 _matchStatus: status,
                 _matches: matches,
-                // For display purposes
+                _needsLeaseback: needsLeaseback,
                 address: address || 'N/A',
                 city: city || '',
                 state: state || '',
@@ -645,12 +692,14 @@
                 beds: beds || 'N/A',
                 baths: baths || 'N/A',
                 status,
-                matches
+                matches,
+                needsLeaseback
             };
         }
 
         function displayResults() {
-            const matchCount = processedResults.filter(r => r.matches).length;
+            const matchCount = processedResults.filter(r => r.matches && !r.needsLeaseback).length;
+            const leasebackCount = processedResults.filter(r => r.needsLeaseback).length;
             const noMatchCount = processedResults.filter(r => !r.matches && r.status !== 'Missing Data' && r.status !== 'Error').length;
             const totalCount = processedResults.length;
 
@@ -663,6 +712,10 @@
                     <div class="summary-number">${matchCount}</div>
                     <div class="summary-label">Matches Buy Box</div>
                 </div>
+                <div class="summary-card leaseback">
+                    <div class="summary-number">${leasebackCount}</div>
+                    <div class="summary-label">Needs Leaseback</div>
+                </div>
                 <div class="summary-card no-match">
                     <div class="summary-number">${noMatchCount}</div>
                     <div class="summary-label">Does Not Match</div>
@@ -672,7 +725,16 @@
             resultsBody.innerHTML = '';
             processedResults.forEach(result => {
                 const row = document.createElement('tr');
-                const statusClass = result.matches ? 'match' : (result.status === 'Missing Data' || result.status === 'Error' ? 'error' : 'no-match');
+                let statusClass;
+                if (result.needsLeaseback) {
+                    statusClass = 'leaseback';
+                } else if (result.matches) {
+                    statusClass = 'match';
+                } else if (result.status === 'Missing Data' || result.status === 'Error') {
+                    statusClass = 'error';
+                } else {
+                    statusClass = 'no-match';
+                }
                 
                 row.innerHTML = `
                     <td>${result.address}</td>
@@ -690,7 +752,11 @@
         }
 
         document.getElementById('exportMatches').addEventListener('click', () => {
-            exportToCSV(processedResults.filter(r => r.matches), 'buy_box_matches.csv');
+            exportToCSV(processedResults.filter(r => r.matches && !r.needsLeaseback), 'buy_box_matches.csv');
+        });
+
+        document.getElementById('exportLeaseback').addEventListener('click', () => {
+            exportToCSV(processedResults.filter(r => r.needsLeaseback), 'buy_box_needs_leaseback.csv');
         });
 
         document.getElementById('exportNoMatches').addEventListener('click', () => {
@@ -702,14 +768,12 @@
         });
 
         function exportToCSV(data, filename) {
-            // Create export data with all original columns plus match status
             const exportData = data.map(row => {
                 const exportRow = { ...row };
-                // Add match status column
                 exportRow['Match Status'] = row._matchStatus;
-                // Remove internal properties used for display
                 delete exportRow._matchStatus;
                 delete exportRow._matches;
+                delete exportRow._needsLeaseback;
                 delete exportRow.address;
                 delete exportRow.city;
                 delete exportRow.state;
@@ -720,6 +784,7 @@
                 delete exportRow.baths;
                 delete exportRow.status;
                 delete exportRow.matches;
+                delete exportRow.needsLeaseback;
                 return exportRow;
             });
             
