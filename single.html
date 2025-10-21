@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ohio Buy Box Verifier</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBvjsZ5-wmdni1XnyOy5X4s_Fyy5X5mi6w&libraries=places"></script>
     <style>
         * {
             margin: 0;
@@ -284,17 +285,41 @@
             color: #666;
             margin-top: 2px;
         }
-        
+
         .autocomplete-loading {
             padding: 12px 16px;
             text-align: center;
             color: #999;
             font-size: 13px;
         }
+
+        .back-home-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .back-home-btn:hover {
+            background: #e8e8e8;
+            transform: translateX(-2px);
+        }
+
+        .back-home-btn::before {
+            content: '← ';
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="index.html" class="back-home-btn">Back to Home</a>
         <h1>Ohio Buy Box Verifier</h1>
         <p class="subtitle">Check if a property matches the buy box criteria</p>
         
@@ -408,128 +433,31 @@
         const loading = document.getElementById('loading');
         const result = document.getElementById('result');
         const addressInput = document.getElementById('address');
-        const autocompleteDropdown = document.getElementById('autocompleteDropdown');
-        
-        let autocompleteTimeout;
-        let selectedIndex = -1;
-        let autocompleteResults = [];
 
-        // Address autocomplete functionality
-        addressInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            
-            if (query.length < 3) {
-                autocompleteDropdown.classList.remove('active');
-                return;
-            }
-            
-            clearTimeout(autocompleteTimeout);
-            
-            autocompleteTimeout = setTimeout(async () => {
-                try {
-                    autocompleteDropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
-                    autocompleteDropdown.classList.add('active');
-                    
-                    const response = await fetch(
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' Ohio')}&addressdetails=1&limit=5`,
-                        {
-                            headers: {
-                                'User-Agent': 'ZipCodeVerifier/1.0'
-                            }
-                        }
-                    );
-                    
-                    const data = await response.json();
-                    autocompleteResults = data;
-                    selectedIndex = -1;
-                    
-                    if (data.length === 0) {
-                        autocompleteDropdown.innerHTML = '<div class="autocomplete-loading">No addresses found</div>';
-                        return;
-                    }
-                    
-                    autocompleteDropdown.innerHTML = data.map((item, index) => {
-                        const mainAddress = item.display_name.split(',').slice(0, 2).join(',');
-                        const subAddress = item.display_name.split(',').slice(2).join(',');
-                        return `
-                            <div class="autocomplete-item" data-index="${index}">
-                                <div class="autocomplete-item-main">${mainAddress}</div>
-                                <div class="autocomplete-item-sub">${subAddress}</div>
-                            </div>
-                        `;
-                    }).join('');
-                    
-                    // Add click handlers
-                    document.querySelectorAll('.autocomplete-item').forEach(item => {
-                        item.addEventListener('click', () => {
-                            const index = parseInt(item.dataset.index);
-                            selectAutocompleteItem(index);
-                        });
-                    });
-                    
-                } catch (error) {
-                    console.error('Autocomplete error:', error);
-                    autocompleteDropdown.classList.remove('active');
-                }
-            }, 300);
-        });
-        
-        // Keyboard navigation for autocomplete
-        addressInput.addEventListener('keydown', (e) => {
-            const items = document.querySelectorAll('.autocomplete-item');
-            
-            if (!autocompleteDropdown.classList.contains('active') || items.length === 0) {
-                return;
-            }
-            
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-                updateSelectedItem(items);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                selectedIndex = Math.max(selectedIndex - 1, -1);
-                updateSelectedItem(items);
-            } else if (e.key === 'Enter' && selectedIndex >= 0) {
-                e.preventDefault();
-                selectAutocompleteItem(selectedIndex);
-            } else if (e.key === 'Escape') {
-                autocompleteDropdown.classList.remove('active');
-                selectedIndex = -1;
-            }
-        });
-        
-        function updateSelectedItem(items) {
-            items.forEach((item, index) => {
-                if (index === selectedIndex) {
-                    item.classList.add('selected');
-                    item.scrollIntoView({ block: 'nearest' });
-                } else {
-                    item.classList.remove('selected');
-                }
+        // Initialize Google Places Autocomplete
+        let autocomplete;
+
+        function initAutocomplete() {
+            autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                componentRestrictions: { country: 'us' },
+                types: ['address'],
+                fields: ['formatted_address', 'address_components', 'geometry']
             });
+
+            // Bias results to Ohio
+            const ohioBounds = new google.maps.LatLngBounds(
+                new google.maps.LatLng(38.4031, -84.8203), // Southwest corner
+                new google.maps.LatLng(41.9775, -80.5190)  // Northeast corner
+            );
+            autocomplete.setBounds(ohioBounds);
         }
-        
-        function selectAutocompleteItem(index) {
-            const selected = autocompleteResults[index];
-            if (selected) {
-                addressInput.value = selected.display_name;
-                autocompleteDropdown.classList.remove('active');
-                selectedIndex = -1;
-            }
-        }
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.autocomplete-container')) {
-                autocompleteDropdown.classList.remove('active');
-                selectedIndex = -1;
-            }
-        });
+
+        // Initialize when page loads
+        window.addEventListener('load', initAutocomplete);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const fullAddress = document.getElementById('address').value.trim();
             const homeType = document.getElementById('homeType').value;
             const yearBuilt = document.getElementById('yearBuilt').value;
@@ -538,99 +466,119 @@
             const sqft = document.getElementById('sqft').value;
             const negotiatedPrice = document.getElementById('negotiatedPrice').value;
             const rehabLevel = document.getElementById('rehabLevel').value;
-            
+
             if (!fullAddress || !homeType || !yearBuilt || !beds || !baths || !sqft || !negotiatedPrice || !rehabLevel) {
                 showResult('warning', 'Missing Information', 'Please fill in all required fields.');
                 return;
             }
-            
+
             // Show loading
             loading.style.display = 'block';
             result.style.display = 'none';
             form.querySelector('button').disabled = true;
-            
+
             try {
-                // Query Nominatim API
-                const response = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&addressdetails=1&limit=1`,
-                    {
-                        headers: {
-                            'User-Agent': 'ZipCodeVerifier/1.0'
+                // Use Google Geocoding API
+                const geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({ address: fullAddress }, (results, status) => {
+                    if (status !== 'OK' || !results || results.length === 0) {
+                        showResult('error', 'Address Not Found', 'Could not locate the specified address. Please check the address and try again.');
+                        loading.style.display = 'none';
+                        form.querySelector('button').disabled = false;
+                        return;
+                    }
+
+                    const location = results[0];
+                    let zipCode = null;
+
+                    // Extract zip code from address components
+                    for (let component of location.address_components) {
+                        if (component.types.includes('postal_code')) {
+                            zipCode = component.long_name;
+                            break;
                         }
                     }
-                );
-                
-                const data = await response.json();
-                
-                if (data.length === 0) {
-                    showResult('error', 'Address Not Found', 'Could not locate the specified address. Please check the address and try again.');
-                    return;
-                }
-                
-                const location = data[0];
-                const zipCode = location.address.postcode;
-                
-                if (!zipCode) {
-                    showResult('warning', 'Zip Code Not Found', 'The address was found, but no zip code could be determined.');
-                    return;
-                }
-                
-                // Extract 5-digit zip code
-                const zip5 = zipCode.split('-')[0];
-                
-                // Check if zip code is accepted
-                const zipAccepted = acceptedZipCodes.has(zip5);
-                
-                // Check buy box requirements
-                let qualifies = zipAccepted;
-                
-                if (qualifies) {
+
+                    if (!zipCode) {
+                        showResult('warning', 'Zip Code Not Found', 'The address was found, but no zip code could be determined.');
+                        loading.style.display = 'none';
+                        form.querySelector('button').disabled = false;
+                        return;
+                    }
+
+                    // Extract 5-digit zip code
+                    const zip5 = zipCode.split('-')[0];
+
+                    // Check if zip code is accepted
+                    const zipAccepted = acceptedZipCodes.has(zip5);
+
+                    // Track all validation issues
+                    const issues = [];
+
+                    // Check buy box requirements
+                    if (!zipAccepted) {
+                        issues.push(`Zip code ${zip5} is not in the accepted Ohio regions`);
+                    }
+
                     // Home Type check
                     if (homeType !== 'sfh' && homeType !== 'mfh') {
-                        qualifies = false;
+                        const homeTypeLabels = {
+                            'condo': 'Condo',
+                            'townhouse': 'Townhouse',
+                            'other': 'Other'
+                        };
+                        issues.push(`Home type must be Single-Family or Multi-Family (currently: ${homeTypeLabels[homeType] || homeType})`);
                     }
-                    
+
                     // Year Built check
                     if (parseInt(yearBuilt) < 1900) {
-                        qualifies = false;
+                        issues.push(`Year built must be 1900 or later (currently: ${yearBuilt})`);
                     }
-                    
+
                     // Square Footage check
                     if (parseInt(sqft) < 850) {
-                        qualifies = false;
+                        issues.push(`Square footage must be at least 850 sq ft (currently: ${sqft} sq ft)`);
                     }
-                    
+
                     // Bed/Bath check
                     const minBeds = 3;
                     const minBaths = 1;
                     const bedsPass = parseInt(beds) >= minBeds;
                     const bathsPass = parseFloat(baths) >= minBaths;
-                    
-                    if (!bedsPass || !bathsPass) {
-                        qualifies = false;
+
+                    if (!bedsPass) {
+                        issues.push(`Must have at least ${minBeds} bedrooms (currently: ${beds})`);
                     }
-                    
+
+                    if (!bathsPass) {
+                        issues.push(`Must have at least ${minBaths} bathroom (currently: ${baths})`);
+                    }
+
                     // Negotiated Price check
                     if (parseInt(negotiatedPrice) > 250000) {
-                        qualifies = false;
+                        issues.push(`Negotiated price must be $250,000 or less (currently: $${parseInt(negotiatedPrice).toLocaleString()})`);
                     }
-                    
+
                     // Rehab Level check
                     if (rehabLevel === 'heavy') {
-                        qualifies = false;
+                        issues.push('Heavy rehab properties are not accepted');
                     }
-                }
-                
-                if (qualifies) {
-                    showResult('success', '✓ Property Matches Buy Box', '');
-                } else {
-                    showResult('error', '✗ Property Does Not Match Buy Box', '');
-                }
-                
+
+                    loading.style.display = 'none';
+                    form.querySelector('button').disabled = false;
+
+                    if (issues.length === 0) {
+                        showResult('success', '✓ Property Matches Buy Box', 'This property meets all buy box criteria.');
+                    } else {
+                        const issuesList = issues.map(issue => `• ${issue}`).join('<br>');
+                        showResult('error', '✗ Property Does Not Match Buy Box', `<strong>Issues found:</strong><br>${issuesList}`);
+                    }
+                });
+
             } catch (error) {
                 showResult('error', 'Error', 'An error occurred while verifying the address. Please try again.');
                 console.error('Error:', error);
-            } finally {
                 loading.style.display = 'none';
                 form.querySelector('button').disabled = false;
             }
