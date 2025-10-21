@@ -572,7 +572,7 @@
                         showResult('success', '✓ Property Matches Buy Box', 'This property meets all buy box criteria.');
                     } else {
                         const issuesList = issues.map(issue => `• ${issue}`).join('<br>');
-                        showResult('error', '✗ Property Does Not Match Buy Box', `<strong>Issues found:</strong><br>${issuesList}`);
+                        showResult('error', '✗ Property Does Not Match Buy Box', `<strong>Issues found:</strong><br>${issuesList}<br><br><div style="margin-top: 15px; padding: 15px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 4px;"><strong>💡 Can't use this deal?</strong><br>Consider selling it to another investor at <a href="https://MaxDispo.com" target="_blank" style="color: #3b82f6; font-weight: bold; text-decoration: underline;">MaxDispo.com</a></div>`);
                     }
                 });
 
